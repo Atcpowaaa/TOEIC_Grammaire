@@ -170,6 +170,45 @@ window.LESSONS = {
       ] },
       { title: "Indénombrables pièges", text: "information, advice, equipment, furniture, luggage, baggage, feedback, research, news : pas de « s », pas de « a »." }
     ]
+  },
+  modaux: {
+    intro: "Un modal (can, could, may, might, must, should, will, would) est toujours suivi de la BASE VERBALE : pas de -s, pas de to.",
+    blocks: [
+      { title: "Le sens de chaque modal", rows: [
+        ["must", "obligation forte / déduction certaine"],
+        ["mustn't", "INTERDICTION"],
+        ["don't have to / needn't", "pas d'obligation (pas nécessaire)"],
+        ["should / ought to", "conseil"],
+        ["can / could", "capacité, permission (could = passé ou plus poli)"],
+        ["may / might", "possibilité, permission polie (May I…?)"]
+      ] },
+      { title: "Modal + have + participe passé", rows: [
+        ["must have done", "a sûrement fait (déduction)"],
+        ["should have done", "aurait dû faire (reproche)"],
+        ["could / might have done", "aurait pu faire"]
+      ] },
+      { title: "Piège", text: "need to / have to / ought to se construisent avec « to » ; must, can, should, may n'en ont jamais." }
+    ]
+  },
+  confusions: {
+    intro: "Des paires de mots proches qui piègent souvent les candidats. Le contexte (complément ou non, nom ou verbe) décide.",
+    blocks: [
+      { title: "Avec ou sans complément ?", rows: [
+        ["raise sth (raised)", "rise (rose, risen) — sans complément"],
+        ["lay sth (laid)", "lie (lay, lain) — sans complément"],
+        ["lend sb sth (prêter)", "borrow sth from sb (emprunter)"]
+      ] },
+      { title: "Make ou do ?", rows: [
+        ["MAKE", "a decision, an effort, a mistake, a call, progress, a profit"],
+        ["DO", "business, research, your best, a favor, the work, an exercise"]
+      ] },
+      { title: "Autres paires", rows: [
+        ["say sth / tell sb", "He said hello. He told me the news."],
+        ["affect (verbe) / effect (nom)", "It affects sales. It has an effect on sales."],
+        ["as / like", "as = en tant que ; like = comme (comparaison)"],
+        ["remind / remember", "remind sb to do ; remember to do"]
+      ] }
+    ]
   }
 };
 
@@ -228,6 +267,27 @@ window.FLASH_DECKS = {
     ["hold", "held — held"], ["lead", "led — led"], ["leave", "left — left"],
     ["rise", "rose — risen"], ["seek", "sought — sought"], ["send", "sent — sent"],
     ["meet", "met — met"], ["take", "took — taken"], ["write", "wrote — written"]
+  ] },
+  modals: { name: "Les modaux", icon: "🛂", cards: [
+    ["must", "Obligation forte : You must wear a badge. / Déduction : He must be tired."],
+    ["mustn't", "INTERDICTION : You mustn't smoke here."],
+    ["don't have to", "Pas d'obligation : You don't have to come (ce n'est pas nécessaire)."],
+    ["should", "Conseil : You should check your e-mail."],
+    ["could", "Capacité passée ou demande polie : Could you help me?"],
+    ["might / may", "Possibilité : It might rain. / Permission : May I come in?"],
+    ["should have + pp", "Reproche : You should have called me."],
+    ["must have + pp", "Déduction sur le passé : She must have left."]
+  ] },
+  pairs: { name: "Mots confondus", icon: "🔀", cards: [
+    ["rise / raise", "rise (rose, risen) = monter, sans complément ; raise (raised) + complément : raise prices"],
+    ["lie / lay", "lie (lay, lain) = être allongé ; lay (laid) + complément : lay the files on the desk"],
+    ["say / tell", "say something ; tell SOMEONE something"],
+    ["make / do", "make a decision, an effort ; do business, a favor, research"],
+    ["lend / borrow", "lend = prêter ; borrow = emprunter"],
+    ["affect / effect", "affect = verbe ; effect = nom"],
+    ["as / like", "as = en tant que (fonction) ; like = comme (comparaison)"],
+    ["remind / remember", "remind someone to do ; remember to do"],
+    ["economic / economical", "economic = lié à l'économie ; economical = économe, peu coûteux"]
   ] }
 };
 
@@ -265,5 +325,37 @@ window.PART6 = [
       { c: ["within", "since", "until", "by"], a: 0, e: "« within two weeks » = dans un délai de deux semaines." },
       { c: ["Alternatively", "Because", "Despite", "Therefore"], a: 0, e: "On propose une autre option : Alternatively (sinon, autrement)." },
       { c: ["Please let us know which option you prefer.", "Your order was delivered yesterday.", "We do not offer refunds.", "The product has never been popular."], a: 0, e: "Après avoir proposé deux options, on demande au client de choisir." }
+    ] },
+  { title: "Offre d'emploi : superviseur", icon: "💼",
+    text: "Brightway Logistics is looking for an experienced warehouse supervisor. The successful candidate [1] a team of 20 employees. Applicants must have at least three years of experience [2] a similar position. [3], knowledge of inventory software is required. [4]\n\nApplications should be sent to jobs@brightway.com by March 15.",
+    blanks: [
+      { c: ["manages", "will manage", "managed", "has managed"], a: 1, e: "Le futur employé dirigera l'équipe (pas encore recruté) → will manage." },
+      { c: ["in", "on", "at", "of"], a: 0, e: "« experience IN a position / IN a field » = de l'expérience dans un poste." },
+      { c: ["Moreover", "However", "Instead", "Otherwise"], a: 0, e: "On ajoute une exigence supplémentaire : Moreover (de plus)." },
+      { c: ["We offer a competitive salary and excellent benefits.", "The warehouse was closed last year.", "Our trucks are painted blue.", "Please do not apply for this position."], a: 0, e: "Après les exigences, une offre d'emploi présente ce que l'entreprise propose (salaire, avantages)." }
+    ] },
+  { title: "Avis : maintenance du site", icon: "🛠️",
+    text: "Dear valued customers,\n\nOur online banking service will be unavailable on Sunday, June 8, from 1 a.m. to 5 a.m. [1] this time, our technicians will install important security updates. We recommend [2] any urgent transactions before Saturday evening. [3] you experience any difficulties after the maintenance, please contact our support team. [4]\n\nThank you for your patience.",
+    blanks: [
+      { c: ["While", "During", "Since", "Until"], a: 1, e: "DURING + nom (this time). While serait suivi d'un sujet + verbe." },
+      { c: ["complete", "to complete", "completing", "completed"], a: 2, e: "recommend + V-ING." },
+      { c: ["Should", "Unless", "Despite", "Whether"], a: 0, e: "« Should you experience… » = If you experience… (inversion soutenue)." },
+      { c: ["Our team is available 24 hours a day at 555-0199.", "Our bank was founded in 1890.", "The update failed completely.", "Online banking is no longer available."], a: 0, e: "La phrase prolonge logiquement « contact our support team » en donnant le moyen de le joindre." }
+    ] },
+  { title: "Note : réservation des salles", icon: "🗓️",
+    text: "To: All employees\nFrom: Office Management\n\nStarting next Monday, meeting rooms [1] through the new online booking system. The paper sign-up sheets [2] no longer be used. To reserve a room, simply log in with your employee ID and select a time slot. Rooms can be booked up to two weeks [3] advance. [4]",
+    blanks: [
+      { c: ["must book", "must be booked", "booking", "have booked"], a: 1, e: "Les salles SONT réservées (passif) : modal + be + participe passé." },
+      { c: ["will", "are", "have", "do"], a: 0, e: "« no longer be used » demande un modal devant la base verbale « be » : will." },
+      { c: ["on", "at", "in", "by"], a: 2, e: "Expression fixe : IN advance (à l'avance)." },
+      { c: ["A short user guide is attached to this e-mail.", "The meeting was very productive.", "Paper is more reliable than computers.", "Employee IDs will be deleted."], a: 0, e: "On présente un nouveau système : il est logique de joindre un guide d'utilisation." }
+    ] },
+  { title: "Communiqué : nouvelle usine", icon: "🏭",
+    text: "Solara Energy announced yesterday that it [1] a new solar panel factory in Spain. The facility, [2] will open in 2028, is expected to create 400 jobs.\n\n\"This expansion reflects the [3] demand for renewable energy in Europe,\" said CEO Laura Mendes. [4]",
+    blanks: [
+      { c: ["builds", "will build", "built", "has been built"], a: 1, e: "La construction est un projet futur (l'usine ouvrira en 2028) → will build." },
+      { c: ["who", "which", "where", "whose"], a: 1, e: "Antécédent = une chose (the facility), sujet de « will open » → which." },
+      { c: ["grow", "growing", "grown", "growth"], a: 1, e: "Entre « the » et le nom « demand » : adjectif → growing (croissant)." },
+      { c: ["Construction work will begin next spring.", "The CEO retired ten years ago.", "Solar energy is not popular in Spain.", "The factory closed last month."], a: 0, e: "Seule cette phrase est cohérente avec un projet d'usine qui ouvrira en 2028." }
     ] }
 ];

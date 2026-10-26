@@ -25,12 +25,18 @@
   function on(sel, ev, fn) {
     app.querySelectorAll(sel).forEach(function (el) { el.addEventListener(ev, fn); });
   }
+  var toastAt = 0;
   function toast(msg) {
-    var t = document.createElement('div');
-    t.className = 'toast';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(function () { t.remove(); }, 1600);
+    // Les toasts s'enchaînent au lieu de se superposer.
+    var wait = Math.max(0, toastAt - Date.now());
+    toastAt = Date.now() + wait + 1700;
+    setTimeout(function () {
+      var t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(function () { t.remove(); }, 1600);
+    }, wait);
   }
   function confetti() {
     var colors = ['#4b4fd6', '#f29e1f', '#1e9e5a', '#d64545', '#7b4fd6', '#ffd27a'];
@@ -49,7 +55,8 @@
   // ---------------------------------------------------------------- sauvegarde
   var KEY = 'toeicgram.v1';
   function defaults() {
-    return { xp: 0, stats: {}, errors: [], bestCombo: 0, day: null, dayStreak: 0, p6: { ok: 0, n: 0 }, tests: [], tensesSeen: [], cfg: { themes: [], count: 10, timer: 0 } };
+    return { xp: 0, stats: {}, errors: [], bestCombo: 0, day: null, dayStreak: 0, p6: { ok: 0, n: 0 }, tests: [], tensesSeen: [], cfg: { themes: [], count: 10, timer: 0 },
+      badges: [], today: { d: null, n: 0 }, survivalBest: 0, blitzBest: 0, p6done: [], detective: false };
   }
   var store = (function () {
     var d = defaults();
@@ -73,8 +80,49 @@
     store.day = t;
   }
   function addXp(n) { store.xp += n; }
+  var GOAL = 20;
+  function todayCount() { return store.today.d === dayStr(new Date()) ? store.today.n : 0; }
+  function countToday() {
+    var t = dayStr(new Date());
+    if (store.today.d !== t) store.today = { d: t, n: 0 };
+    store.today.n++;
+    if (store.today.n === GOAL) toast('🎯 Objectif du jour atteint !');
+  }
+  function totalOk() {
+    var n = 0;
+    Object.keys(store.stats).forEach(function (k) { n += store.stats[k].ok; });
+    return n;
+  }
+  function badgeEarned(id) {
+    switch (id) {
+      case 'first': return totalOk() >= 1;
+      case 'hundred': return totalOk() >= 100;
+      case 'fivehundred': return totalOk() >= 500;
+      case 'combo10': return store.bestCombo >= 10;
+      case 'tenses': return store.tensesSeen.length >= Object.keys(TENSES).length;
+      case 'streak7': return store.dayStreak >= 7;
+      case 'test80': return store.tests.some(function (t) { return t.score >= 80; });
+      case 'survivor': return store.survivalBest >= 20;
+      case 'blitz': return store.blitzBest >= 15;
+      case 'detective': return store.detective;
+      case 'reader': return store.p6done.length >= window.PART6.length;
+      case 'allround': return Object.keys(THEMES).every(function (k) { return store.stats[k] && store.stats[k].n >= 10; });
+      case 'goal': return todayCount() >= GOAL;
+    }
+    return false;
+  }
+  function checkBadges() {
+    window.BADGES.forEach(function (b) {
+      if (store.badges.indexOf(b.id) < 0 && badgeEarned(b.id)) {
+        store.badges.push(b.id);
+        toast('🏅 Badge débloqué : ' + b.name);
+      }
+    });
+    save();
+  }
   function record(q, ok, xp) {
     touchDay();
+    countToday();
     var s = store.stats[q.th] || (store.stats[q.th] = { ok: 0, n: 0 });
     s.n++;
     var i = store.errors.indexOf(q.id);
@@ -85,7 +133,7 @@
     } else if (i < 0) {
       store.errors.push(q.id);
     }
-    save();
+    checkBadges();
   }
   function level() { return Math.floor(store.xp / 200) + 1; }
   function levelProgress() { return (store.xp % 200) / 2; }
@@ -208,6 +256,8 @@
           '<span class="pill">' + store.xp + ' XP</span>' +
         '</div>' +
         '<div class="xpbar"><div style="width:' + levelProgress() + '%"></div></div>' +
+        '<div class="goal"><span>🎯 Objectif du jour</span><b>' + Math.min(todayCount(), GOAL) + ' / ' + GOAL + '</b></div>' +
+        '<div class="xpbar goalbar"><div style="width:' + Math.min(100, todayCount() * 100 / GOAL) + '%"></div></div>' +
       '</section>' +
       '<div class="tip"><b>💡 Astuce :</b> ' + esc(tip) + '</div>' +
       '<div class="grid">' +
@@ -215,11 +265,13 @@
         tile('test', '⏱️', 'Test chrono', '30 questions · 10 min') +
         tile('part6', '📰', 'Part 6', 'Textes à trous') +
         tile('tenses', '⏳', 'Frises des temps', 'Visualise chaque temps') +
-        tile('games', '🎮', 'Jeux', 'Quelle frise ? Chronologie') +
+        tile('machine', '⚙️', 'Machine à conjuguer', 'Construis tes phrases') +
+        tile('games', '🎮', 'Jeux', 'Survie, défi éclair, trouve l\'erreur…') +
         tile('flash', '🃏', 'Cartes mémoire', 'Prépositions, connecteurs…') +
         tile('lessons', '📘', 'Fiches', 'Les règles à connaître') +
         tile('errors', '❌', 'Mes erreurs', nErr ? nErr + ' question' + (nErr > 1 ? 's' : '') + ' à revoir' : 'Aucune pour l\'instant') +
         tile('stats', '📈', 'Statistiques', 'Ta progression') +
+        tile('badges', '🏅', 'Badges', store.badges.length + ' / ' + window.BADGES.length + ' débloqués') +
         tile('method', '🧭', 'Méthode Part 5', 'Les bons réflexes', 'wide') +
       '</div>';
     bindNav();
@@ -301,6 +353,8 @@
   };
 
   // ---------------------------------------------------------------- quiz
+  // Modes : train et errors (correction après chaque question), test (examen 10 min),
+  // survival (3 vies, correction affichée), blitz (60 s, sans correction).
   var session = null;
   function prep(q) {
     var order = shuffle([0, 1, 2, 3]);
@@ -312,7 +366,7 @@
     session = {
       list: list.map(prep), i: 0, mode: mode, answers: [], combo: 0, bestCombo: 0, xp: 0,
       timer: o.timer || 0, title: o.title || 'Entraînement', answered: false, choice: null, hint: false,
-      qStart: Date.now(), deadline: o.total ? Date.now() + o.total * 1000 : 0, done: false
+      qStart: Date.now(), deadline: o.total ? Date.now() + o.total * 1000 : 0, lives: o.lives || 0, done: false
     };
     go('quiz');
   }
@@ -334,18 +388,35 @@
       : '<span class="blank">&nbsp;?&nbsp;</span>';
     return h.replace('_____', blank);
   }
+  function isExam(s) { return s.mode === 'test' || s.mode === 'blitz'; }
+  function isArcade(s) { return s.mode === 'survival' || s.mode === 'blitz'; }
+  function okCount(s) { return s.answers.filter(function (a) { return a.ok; }).length; }
+  function hearts(n) {
+    var h = '';
+    for (var i = 0; i < 3; i++) h += i < n ? '❤️' : '🤍';
+    return h;
+  }
   routes.quiz = function () {
     var s = session;
     if (!s) return replace('');
     if (s.done) return replace('result');
-    var q = s.list[s.i], n = s.list.length, test = s.mode === 'test';
-    var extra = test ? '<span class="pill accent" id="gtime">10:00</span>'
-      : '<span class="pill' + (s.combo >= 2 ? ' accent combo' : '') + '">🔥 ' + s.combo + '</span>';
-    var html = topbar(esc(s.title), test ? 'test' : (s.mode === 'errors' ? 'errors' : 'train'), extra) +
-      '<div class="qmeta"><div class="progress"><div style="width:' + (s.i * 100 / n) + '%"></div></div><span class="small muted">' + (s.i + 1) + ' / ' + n + '</span></div>';
-    if (s.timer && !test && !s.answered) html += '<div class="timer" id="qtimer"><div style="width:100%"></div></div>';
+    var q = s.list[s.i], n = s.list.length, exam = isExam(s);
+    var parent = { test: 'test', errors: 'errors', survival: 'survival', blitz: 'blitz' }[s.mode] || 'train';
+    var comboPill = '<span class="pill' + (s.combo >= 2 ? ' accent combo' : '') + '">🔥 ' + s.combo + '</span>';
+    var extra = comboPill;
+    if (s.mode === 'test') extra = '<span class="pill accent" id="gtime">10:00</span>';
+    if (s.mode === 'blitz') extra = '<span class="pill combo">✔ ' + okCount(s) + '</span><span class="pill accent" id="gtime">1:00</span>';
+    if (s.mode === 'survival') extra = '<span class="pill">' + hearts(s.lives) + '</span>';
+    var html = topbar(esc(s.title), parent, extra);
+    if (isArcade(s)) {
+      html += '<div class="qmeta"><span class="small muted">Question ' + (s.i + 1) + '</span>' +
+        (s.mode === 'survival' ? '<span class="pill accent">' + okCount(s) + ' pts</span>' + comboPill : '') + '</div>';
+    } else {
+      html += '<div class="qmeta"><div class="progress"><div style="width:' + (s.i * 100 / n) + '%"></div></div><span class="small muted">' + (s.i + 1) + ' / ' + n + '</span></div>';
+    }
+    if (s.timer && !exam && !s.answered) html += '<div class="timer" id="qtimer"><div style="width:100%"></div></div>';
     html += '<div class="card">';
-    if (!test) html += '<div class="qmeta"><span class="chip static">' + THEMES[q.th].icon + ' ' + esc(THEMES[q.th].name) + '</span>' +
+    if (!exam) html += '<div class="qmeta"><span class="chip static">' + THEMES[q.th].icon + ' ' + esc(THEMES[q.th].name) + '</span>' +
       (!s.answered && q.h ? '<button class="hintbtn" id="hint">💡 Indice</button>' : '') + '</div>';
     html += '<p class="sentence">' + sentenceHtml(q, s.answered, s.hint) + '</p></div>';
     html += '<div class="choices">' + q.c.map(function (c, i) {
@@ -362,7 +433,8 @@
         html += '<div class="tlwrap"><b class="small">' + esc(TENSES[q.t].name) + '</b>' + timeline(TENSES[q.t].tl, { anim: true }) +
           '<button class="linkbtn" data-go="tense/' + q.t + '">Voir la fiche de ce temps →</button></div>';
       }
-      html += '</div><button class="btn" id="next">' + (s.i + 1 < n ? 'Question suivante →' : 'Voir mon score') + '</button>';
+      var last = s.mode === 'survival' ? s.lives <= 0 || s.i + 1 >= n : s.i + 1 >= n;
+      html += '</div><button class="btn" id="next">' + (last ? 'Voir mon score' : 'Question suivante →') + '</button>';
     }
     app.innerHTML = html;
     bindNav();
@@ -374,9 +446,9 @@
     startQuizTimers();
   };
   function startQuizTimers() {
-    var s = session, test = s.mode === 'test';
+    var s = session;
     stopTimer();
-    if (test) {
+    if (isExam(s)) {
       var g = document.getElementById('gtime');
       var upd = function () {
         var left = Math.max(0, Math.round((s.deadline - Date.now()) / 1000));
@@ -403,15 +475,17 @@
     if (ok) {
       s.combo++;
       s.bestCombo = Math.max(s.bestCombo, s.combo);
+      store.bestCombo = Math.max(store.bestCombo, s.combo);
       gain = (s.hint ? 5 : 10) + (s.combo >= 3 ? 2 : 0);
       s.xp += gain;
-      if (s.mode !== 'test' && (s.combo === 3 || s.combo === 5 || s.combo === 10)) toast('🔥 Combo x' + s.combo + ' !');
+      if (!isExam(s) && (s.combo === 3 || s.combo === 5 || s.combo === 10)) toast('🔥 Combo x' + s.combo + ' !');
     } else {
       s.combo = 0;
+      if (s.mode === 'survival') s.lives--;
     }
     record(q, ok, gain);
     stopTimer();
-    if (s.mode === 'test') return next();
+    if (isExam(s)) return next();
     s.answered = true;
     s.choice = idx;
     routes.quiz();
@@ -420,7 +494,7 @@
     var s = session;
     s.i++;
     s.answered = false; s.choice = null; s.hint = false; s.qStart = Date.now();
-    if (s.i >= s.list.length) return finish();
+    if (s.i >= s.list.length || (s.mode === 'survival' && s.lives <= 0)) return finish();
     routes.quiz();
     window.scrollTo(0, 0);
   }
@@ -428,38 +502,52 @@
     var s = session;
     stopTimer();
     // Test chrono : les questions non traitées à la fin du temps comptent comme fausses.
-    for (var i = s.answers.length; i < s.list.length; i++) {
-      s.answers.push({ id: s.list[i].id, q: s.list[i], choice: -1, ok: false });
-      record(s.list[i], false, 0);
+    if (s.mode === 'test') {
+      for (var i = s.answers.length; i < s.list.length; i++) {
+        s.answers.push({ id: s.list[i].id, q: s.list[i], choice: -1, ok: false });
+        record(s.list[i], false, 0);
+      }
     }
     s.done = true;
-    store.bestCombo = Math.max(store.bestCombo, s.bestCombo);
+    var okN = okCount(s);
     if (s.mode === 'test') {
-      store.tests.push({ d: dayStr(new Date()), score: pct(s.answers.filter(function (a) { return a.ok; }).length, s.list.length) });
+      store.tests.push({ d: dayStr(new Date()), score: pct(okN, s.list.length) });
       store.tests = store.tests.slice(-20);
     }
-    save();
+    if (s.mode === 'survival') { s.record = okN > store.survivalBest; store.survivalBest = Math.max(store.survivalBest, okN); }
+    if (s.mode === 'blitz') { s.record = okN > store.blitzBest; store.blitzBest = Math.max(store.blitzBest, okN); }
+    checkBadges();
     replace('result');
   }
 
   routes.result = function () {
     var s = session;
     if (!s || !s.done) return replace('');
-    var okN = s.answers.filter(function (a) { return a.ok; }).length, n = s.list.length, p = pct(okN, n);
-    var stars = p >= 90 ? 3 : p >= 70 ? 2 : p >= 40 ? 1 : 0;
-    var msg = p >= 90 ? 'Excellent, niveau TOEIC au top !' : p >= 70 ? 'Très bien, continue comme ça !' : p >= 40 ? 'Pas mal ! Revois les points faibles.' : 'Courage, relis les fiches et réessaie.';
+    var okN = okCount(s), n = s.answers.length, p = pct(okN, n);
     var by = {};
     s.answers.forEach(function (a) {
       var t = by[a.q.th] || (by[a.q.th] = { ok: 0, n: 0 });
       t.n++; if (a.ok) t.ok++;
     });
-    var html = topbar('Résultat', '') +
-      '<div class="card center"><div class="stars">' + '★★★'.slice(0, stars) + '<span class="muted">' + '★★★'.slice(0, 3 - stars) + '</span></div>' +
-      '<div class="score-big">' + okN + ' / ' + n + '</div><p><b>' + p + ' %</b> · ' + msg + '</p>' +
-      '<div class="chips" style="justify-content:center"><span class="chip static">+' + s.xp + ' XP</span><span class="chip static">🔥 meilleur combo : ' + s.bestCombo + '</span></div></div>' +
-      '<h2>Par thème</h2><div class="card">' + Object.keys(by).map(function (k) {
+    var html = topbar('Résultat', isArcade(s) ? 'games' : '');
+    if (isArcade(s)) {
+      var best = s.mode === 'survival' ? store.survivalBest : store.blitzBest;
+      html += '<div class="card center"><div style="font-size:3rem">' + (s.record ? '🏆' : s.mode === 'survival' ? '❤️' : '🚀') + '</div>' +
+        '<div class="score-big">' + okN + ' pts</div><p><b>' + (s.record ? 'Nouveau record !' : 'Record : ' + best + ' pts') + '</b></p>' +
+        '<p class="muted small">' + n + ' question' + (n > 1 ? 's' : '') + ' · ' + p + ' % de réussite</p>' +
+        '<div class="chips" style="justify-content:center"><span class="chip static">+' + s.xp + ' XP</span><span class="chip static">🔥 meilleur combo : ' + s.bestCombo + '</span></div></div>';
+    } else {
+      var stars = p >= 90 ? 3 : p >= 70 ? 2 : p >= 40 ? 1 : 0;
+      var msg = p >= 90 ? 'Excellent, niveau TOEIC au top !' : p >= 70 ? 'Très bien, continue comme ça !' : p >= 40 ? 'Pas mal ! Revois les points faibles.' : 'Courage, relis les fiches et réessaie.';
+      html += '<div class="card center"><div class="stars">' + '★★★'.slice(0, stars) + '<span class="muted">' + '★★★'.slice(0, 3 - stars) + '</span></div>' +
+        '<div class="score-big">' + okN + ' / ' + n + '</div><p><b>' + p + ' %</b> · ' + msg + '</p>' +
+        '<div class="chips" style="justify-content:center"><span class="chip static">+' + s.xp + ' XP</span><span class="chip static">🔥 meilleur combo : ' + s.bestCombo + '</span></div></div>';
+    }
+    if (n) {
+      html += '<h2>Par thème</h2><div class="card">' + Object.keys(by).map(function (k) {
         return barRow(THEMES[k].icon + ' ' + THEMES[k].name, by[k].ok, by[k].n);
       }).join('') + '</div>';
+    }
     var wrong = s.answers.filter(function (a) { return !a.ok; });
     if (wrong.length) {
       html += '<h2>Correction des erreurs</h2>' + wrong.map(function (a) {
@@ -470,15 +558,20 @@
           (q.t ? '<button class="linkbtn" data-go="tense/' + q.t + '">⏳ Frise : ' + esc(TENSES[q.t].name) + '</button>' : '') + '</details>';
       }).join('');
     }
-    html += '<div class="btn-row"><button class="btn secondary" data-go="">Accueil</button>' +
-      (wrong.length ? '<button class="btn" id="redo">Refaire les erreurs</button>' : '<button class="btn" data-go="train">Continuer</button>') + '</div>';
+    html += '<div class="btn-row"><button class="btn secondary" data-go="">Accueil</button>';
+    if (isArcade(s)) html += '<button class="btn" id="again">Rejouer</button>';
+    else if (wrong.length) html += '<button class="btn" id="redo">Refaire les erreurs</button>';
+    else html += '<button class="btn" data-go="train">Continuer</button>';
+    html += '</div>';
     app.innerHTML = html;
     bindNav();
     var r = document.getElementById('redo');
     if (r) r.addEventListener('click', function () {
       startSession(shuffle(wrong.map(function (a) { return QBYID[a.id]; })), 'errors', { title: 'Mes erreurs' });
     });
-    if (p >= 80) confetti();
+    var ag = document.getElementById('again');
+    if (ag) ag.addEventListener('click', function () { (s.mode === 'survival' ? startSurvival : startBlitz)(); });
+    if (isArcade(s) ? s.record && okN >= 5 : p >= 80) confetti();
   };
   function barRow(label, ok, n) {
     var p = pct(ok, n);
@@ -490,7 +583,8 @@
   routes.tenses = function () {
     var html = topbar('Frises des temps', '') +
       '<p class="muted small">Touche un temps pour voir sa frise animée, sa formation et ses mots repères.</p>' +
-      '<button class="item" data-go="compare"><span class="ic">⚖️</span><span class="grow"><b>Comparer deux temps</b><br><span class="small muted">Prétérit vs present perfect, will vs going to…</span></span><span class="chev">›</span></button>';
+      '<div class="list"><button class="item" data-go="compare"><span class="ic">⚖️</span><span class="grow"><b>Comparer deux temps</b><br><span class="small muted">Prétérit vs present perfect, will vs going to…</span></span><span class="chev">›</span></button>' +
+      '<button class="item" data-go="machine"><span class="ic">⚙️</span><span class="grow"><b>Machine à conjuguer</b><br><span class="small muted">Construis une phrase à n\'importe quel temps</span></span><span class="chev">›</span></button></div>';
     window.TENSE_GROUPS.forEach(function (g) {
       html += '<h2>' + g.name + '</h2><div class="list">' + g.ids.map(function (id) {
         var t = TENSES[id], seen = store.tensesSeen.indexOf(id) >= 0;
@@ -506,7 +600,7 @@
   routes.tense = function (id) {
     var t = TENSES[id];
     if (!t) return replace('tenses');
-    if (store.tensesSeen.indexOf(id) < 0) { store.tensesSeen.push(id); save(); }
+    if (store.tensesSeen.indexOf(id) < 0) { store.tensesSeen.push(id); checkBadges(); }
     var comps = window.TENSE_COMPARISONS.map(function (c, i) { return { c: c, i: i }; })
       .filter(function (x) { return x.c.a === id || x.c.b === id; });
     app.innerHTML = topbar(esc(t.name), 'tenses') +
@@ -555,8 +649,12 @@
   // ---------------------------------------------------------------- jeux
   routes.games = function () {
     app.innerHTML = topbar('Jeux', '') + '<div class="list">' +
+      gameItem('survival', '❤️', 'Survie', 'Toutes les questions, 3 vies. Record : ' + store.survivalBest + ' pts') +
+      gameItem('blitz', '🚀', 'Défi éclair', '60 secondes pour un maximum de bonnes réponses. Record : ' + store.blitzBest + ' pts') +
+      gameItem('spot', '🔍', 'Trouve l\'erreur', 'Repère le passage fautif dans la phrase.') +
       gameItem('frise', '🧭', 'Quelle frise ?', 'Lis la phrase et trouve la frise qui correspond.') +
       gameItem('chrono', '⏮️', 'Qu\'est-ce qui s\'est passé en premier ?', 'Remets les actions dans l\'ordre chronologique.') +
+      gameItem('machine', '⚙️', 'Machine à conjuguer', 'Choisis verbe, sujet et temps : la phrase et sa frise apparaissent.') +
       gameItem('flash', '🃏', 'Cartes mémoire', 'Retourne les cartes et teste ta mémoire.') +
       '</div>';
     bindNav();
@@ -595,7 +693,9 @@
     bindNav();
     on('[data-o]', 'click', function () {
       cur.choice = +this.getAttribute('data-o');
-      if (cur.opts[cur.choice] === cur.id) { fg.score += 10; addXp(5); touchDay(); save(); }
+      touchDay(); countToday();
+      if (cur.opts[cur.choice] === cur.id) { fg.score += 10; addXp(5); }
+      checkBadges();
       routes.frise();
     });
     var nb = document.getElementById('next');
@@ -638,7 +738,9 @@
     bindNav();
     on('[data-k]', 'click', function () {
       cg.choice = this.getAttribute('data-k');
-      if (cg.choice === it.first) { cg.score += 10; addXp(5); touchDay(); save(); }
+      touchDay(); countToday();
+      if (cg.choice === it.first) { cg.score += 10; addXp(5); }
+      checkBadges();
       routes.chrono();
     });
     var nb = document.getElementById('next');
@@ -659,6 +761,145 @@
     if (p >= 80) confetti();
     window.scrollTo(0, 0);
   }
+
+  // Jeux d'arcade : Survie (3 vies) et Défi éclair (60 secondes).
+  function startSurvival() {
+    startSession(shuffle(QUESTIONS), 'survival', { lives: 3, title: 'Survie' });
+  }
+  function startBlitz() {
+    startSession(shuffle(QUESTIONS).slice(0, 80), 'blitz', { total: 60, title: 'Défi éclair' });
+  }
+  function arcadeIntro(ic, title, rules, best, start) {
+    app.innerHTML = topbar(title, 'games') +
+      '<div class="card center"><div style="font-size:3.2rem">' + ic + '</div><h3>' + title + '</h3>' +
+      '<ul class="clean" style="text-align:left">' + rules.map(function (r) { return '<li>' + r + '</li>'; }).join('') + '</ul>' +
+      '<p><span class="chip static">🏆 Record : ' + best + ' pts</span></p></div>' +
+      '<button class="btn" id="start">Jouer</button>';
+    bindNav();
+    document.getElementById('start').addEventListener('click', start);
+  }
+  routes.survival = function () {
+    arcadeIntro('❤️', 'Survie', ['Questions de tous les thèmes, à l\'infini', 'Tu as 3 vies : chaque erreur en coûte une', 'La correction s\'affiche après chaque question'],
+      store.survivalBest, startSurvival);
+  };
+  routes.blitz = function () {
+    arcadeIntro('🚀', 'Défi éclair', ['60 secondes chrono', 'Réponds au maximum de questions', 'Pas de correction pendant le défi : tout est corrigé à la fin'],
+      store.blitzBest, startBlitz);
+  };
+
+  // Jeu : trouve le morceau de phrase qui contient l'erreur.
+  var sp = null;
+  routes.spot = function () {
+    if (!sp || sp.over) sp = { items: shuffle(window.ERROR_ITEMS).slice(0, 10), i: 0, score: 0, choice: null };
+    var it = sp.items[sp.i], answered = sp.choice !== null;
+    var html = topbar('Trouve l\'erreur', 'games', '<span class="pill">' + sp.score + ' pts</span>') +
+      '<div class="qmeta"><div class="progress"><div style="width:' + (sp.i * 100 / sp.items.length) + '%"></div></div><span class="small muted">' + (sp.i + 1) + ' / ' + sp.items.length + '</span></div>' +
+      '<div class="card"><p class="muted small" style="margin-top:0">Touche le passage qui contient une faute :</p><p class="spot">' +
+      it.p.map(function (part, k) {
+        var cls = '';
+        if (answered) cls = k === it.w ? 'bad' : (k === sp.choice ? 'miss' : 'done');
+        var inner = esc(part) + (answered && k === it.w ? ' <span class="fix">→ ' + esc(it.fix) + '</span>' : '');
+        return '<button class="seg-part ' + cls + '" data-k="' + k + '"' + (answered ? ' disabled' : '') + '>' + inner + '<small>' + LETTERS[k] + '</small></button>';
+      }).join(' ') + '</p></div>';
+    if (answered) {
+      var ok = sp.choice === it.w;
+      html += '<div class="feedback ' + (ok ? 'ok' : 'ko') + '"><h3>' + (ok ? '✅ Bien vu !' : '❌ L\'erreur était en (' + LETTERS[it.w] + ')') + '</h3>' +
+        '<p>' + esc(it.e) + '</p><button class="linkbtn" data-go="lesson/' + it.th + '">' + THEMES[it.th].icon + ' Fiche : ' + esc(THEMES[it.th].name) + ' →</button></div>' +
+        '<button class="btn" id="next">' + (sp.i + 1 < sp.items.length ? 'Suivant →' : 'Voir mon score') + '</button>';
+    }
+    app.innerHTML = html;
+    bindNav();
+    on('[data-k]', 'click', function () {
+      sp.choice = +this.getAttribute('data-k');
+      touchDay(); countToday();
+      if (sp.choice === it.w) { sp.score += 10; addXp(5); }
+      checkBadges();
+      routes.spot();
+    });
+    var nb = document.getElementById('next');
+    if (nb) nb.addEventListener('click', function () {
+      if (sp.i + 1 >= sp.items.length) {
+        sp.over = true;
+        if (sp.score === sp.items.length * 10) { store.detective = true; checkBadges(); }
+        return gameOver('Trouve l\'erreur', sp.score, sp.items.length * 10, 'spot');
+      }
+      sp.i++; sp.choice = null; routes.spot(); window.scrollTo(0, 0);
+    });
+  };
+
+  // Machine à conjuguer : construit la phrase pour un verbe, un sujet, un temps et une forme.
+  var mc = { v: 0, s: 2, t: 'presentPerfect', f: 'aff' };
+  function conjugate(v, sb, t, f) {
+    var have = sb.third ? 'has' : 'have';
+    var beNeg = { am: 'am not', is: "isn't", are: "aren't" }[sb.be];
+    var T = {
+      presentSimple:            [[sb.third ? v.s : v.base], [sb.third ? "doesn't" : "don't", v.base], [sb.third ? 'does' : 'do', v.base]],
+      presentContinuous:        [[sb.be, v.ing], [beNeg, v.ing], [sb.be, v.ing]],
+      presentPerfect:           [[have, v.pp], [have + "n't", v.pp], [have, v.pp]],
+      presentPerfectContinuous: [[have, 'been', v.ing], [have + "n't", 'been', v.ing], [have, 'been', v.ing]],
+      pastSimple:               [[v.past], ["didn't", v.base], ['did', v.base]],
+      pastContinuous:           [[sb.was, v.ing], [sb.was + "n't", v.ing], [sb.was, v.ing]],
+      pastPerfect:              [['had', v.pp], ["hadn't", v.pp], ['had', v.pp]],
+      pastPerfectContinuous:    [['had', 'been', v.ing], ["hadn't", 'been', v.ing], ['had', 'been', v.ing]],
+      futureWill:               [['will', v.base], ["won't", v.base], ['will', v.base]],
+      goingTo:                  [[sb.be, 'going to', v.base], [beNeg, 'going to', v.base], [sb.be, 'going to', v.base]],
+      futureContinuous:         [['will', 'be', v.ing], ["won't", 'be', v.ing], ['will', 'be', v.ing]],
+      futurePerfect:            [['will', 'have', v.pp], ["won't", 'have', v.pp], ['will', 'have', v.pp]]
+    }[t][{ aff: 0, neg: 1, q: 2 }[f]];
+    var tail = ' ' + esc(v.obj) + ' ' + esc(window.TENSE_MARKERS[t]);
+    var hl = function (words) { return '<b class="vhl">' + esc(words.join(' ')) + '</b>'; };
+    var cap = function (w) { return w.charAt(0).toUpperCase() + w.slice(1); };
+    if (f === 'q') {
+      return '<b class="vhl">' + esc(cap(T[0])) + '</b> ' + esc(sb.w) + ' ' + hl(T.slice(1)) + tail + '?';
+    }
+    return esc(sb.w === 'I' ? 'I' : cap(sb.w)) + ' ' + hl(T) + tail + '.';
+  }
+  routes.machine = function () {
+    var V = window.VERBS, S = window.SUBJECTS, t = TENSES[mc.t];
+    var chips = function (list, key, label) {
+      return '<div class="chips">' + list.map(function (x, i) {
+        return '<button class="chip' + (mc[key] === i ? ' on' : '') + '" data-mk="' + key + '" data-mv="' + i + '">' + esc(label(x)) + '</button>';
+      }).join('') + '</div>';
+    };
+    var html = topbar('Machine à conjuguer', 'tenses') +
+      '<div class="card machine-out"><p class="sentence" id="mcs">' + conjugate(V[mc.v], S[mc.s], mc.t, mc.f) + '</p>' +
+      '<div class="formula small">' + esc(t.name) + ' · ' + esc(t.form) + '</div>' +
+      '<div id="mctl">' + timeline(t.tl, { anim: true }) + '</div>' +
+      '<div class="btn-row"><button class="btn secondary" id="rand">🎲 Au hasard</button><button class="btn ghost" data-go="tense/' + mc.t + '">Fiche du temps</button></div></div>' +
+      '<h2>Forme</h2>' + seg('mf', [['aff', 'Affirmative'], ['neg', 'Négative'], ['q', 'Question']], mc.f) +
+      '<h2>Temps</h2>';
+    window.TENSE_GROUPS.forEach(function (g) {
+      html += '<p class="small muted" style="margin:10px 0 6px">' + g.name + '</p><div class="chips">' + g.ids.map(function (id) {
+        return '<button class="chip' + (mc.t === id ? ' on' : '') + '" data-mt="' + id + '">' + esc(TENSES[id].name) + '</button>';
+      }).join('') + '</div>';
+    });
+    html += '<h2>Sujet</h2>' + chips(S, 's', function (x) { return x.w; }) +
+      '<h2>Verbe</h2>' + chips(V, 'v', function (x) { return x.base; });
+    app.innerHTML = html;
+    bindNav();
+    var y = window.scrollY;
+    var redraw = function () { y = window.scrollY; routes.machine(); window.scrollTo(0, y); };
+    on('[data-mk]', 'click', function () { mc[this.getAttribute('data-mk')] = +this.getAttribute('data-mv'); redraw(); });
+    on('[data-mt]', 'click', function () { mc.t = this.getAttribute('data-mt'); redraw(); });
+    on('[data-seg="mf"]', 'click', function () { mc.f = this.getAttribute('data-v'); redraw(); });
+    document.getElementById('rand').addEventListener('click', function () {
+      var ids = Object.keys(TENSES);
+      mc = { v: Math.floor(Math.random() * V.length), s: Math.floor(Math.random() * S.length), t: ids[Math.floor(Math.random() * ids.length)], f: ['aff', 'neg', 'q'][Math.floor(Math.random() * 3)] };
+      routes.machine();
+    });
+  };
+
+  // Badges
+  routes.badges = function () {
+    var got = store.badges;
+    app.innerHTML = topbar('Badges', '') +
+      '<p class="muted small">' + got.length + ' / ' + window.BADGES.length + ' badges débloqués</p><div class="grid">' +
+      window.BADGES.map(function (b) {
+        var on = got.indexOf(b.id) >= 0;
+        return '<div class="tile badge' + (on ? '' : ' locked') + '" style="min-height:auto"><span class="ic">' + (on ? b.icon : '🔒') + '</span><b>' + esc(b.name) + '</b><span>' + esc(b.desc) + '</span></div>';
+      }).join('') + '</div>';
+    bindNav();
+  };
 
   // ---------------------------------------------------------------- cartes mémoire
   var fl = null;
@@ -708,7 +949,8 @@
       app.innerHTML = topbar('Part 6 · Textes à trous', '') +
         '<p class="muted small">Comme au TOEIC : un texte, 4 blancs. Le dernier blanc demande d\'insérer une phrase entière.</p><div class="list">' +
         texts.map(function (t, i) {
-          return '<button class="item" data-go="part6/' + i + '"><span class="ic">' + t.icon + '</span><span class="grow"><b>' + esc(t.title) + '</b><br><span class="small muted">4 questions</span></span><span class="chev">›</span></button>';
+          var done = store.p6done.indexOf(i) >= 0;
+          return '<button class="item" data-go="part6/' + i + '"><span class="ic">' + t.icon + '</span><span class="grow"><b>' + esc(t.title) + (done ? ' ✓' : '') + '</b><br><span class="small muted">4 questions</span></span><span class="chev">›</span></button>';
         }).join('') + '</div>';
       return bindNav();
     }
@@ -744,9 +986,11 @@
       var k = +this.getAttribute('data-b'), i = +this.getAttribute('data-i');
       p6.ans[k] = i;
       touchDay();
+      countToday();
       store.p6.n++;
       if (i === t.blanks[k].a) { store.p6.ok++; addXp(10); }
-      save();
+      if (p6.ans.every(function (a) { return a !== null; }) && store.p6done.indexOf(+idx) < 0) store.p6done.push(+idx);
+      checkBadges();
       routes.part6(idx);
     });
   };
@@ -802,6 +1046,7 @@
         statTile('⭐', 'Niveau ' + l, levelName(l)) + statTile('✨', store.xp + ' XP', 'au total') +
         statTile('🔥', (store.dayStreak || 0) + ' jour(s)', 'série en cours') + statTile('⚡', 'x' + store.bestCombo, 'meilleur combo') +
         statTile('✅', pct(ok, tot) + ' %', ok + ' / ' + tot + ' réponses justes') + statTile('⏳', store.tensesSeen.length + ' / 12', 'frises étudiées') +
+        statTile('❤️', store.survivalBest + ' pts', 'record Survie') + statTile('🚀', store.blitzBest + ' pts', 'record Défi éclair') +
       '</div>' +
       '<h2>Réussite par thème</h2><div class="card">' + Object.keys(THEMES).map(function (k) {
         var s = store.stats[k] || { ok: 0, n: 0 };
@@ -810,6 +1055,7 @@
       (store.tests.length ? '<h2>Tests chrono</h2><div class="card">' + store.tests.slice(-5).reverse().map(function (t) {
         return '<div class="bar-row"><span class="lbl">' + esc(t.d) + '</span><div class="bar"><div style="width:' + t.score + '%"></div></div><span class="val">' + t.score + '%</span></div>';
       }).join('') + '</div>' : '') +
+      '<button class="btn secondary" data-go="badges">🏅 Voir mes badges (' + store.badges.length + ' / ' + window.BADGES.length + ')</button>' +
       '<button class="btn ghost" id="reset">Réinitialiser ma progression</button>';
     bindNav();
     document.getElementById('reset').addEventListener('click', function () {

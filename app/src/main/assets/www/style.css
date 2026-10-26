@@ -284,3 +284,31 @@ table.rules tr:last-child td { border-bottom: 0; }
   .grid { grid-template-columns: 1fr; }
   .tile.wide { grid-column: auto; }
 }
+
+/* ---------- Objectif du jour ---------- */
+.goal { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: .9rem; }
+.goalbar { margin-top: 6px; }
+.goalbar > div { background: #7ef0b0; }
+
+/* ---------- Trouve l'erreur ---------- */
+.spot { line-height: 2.6; font-size: 1.08rem; margin: 6px 0 0; }
+.seg-part {
+  position: relative; display: inline; border: 0; background: var(--surface-2); border-radius: 8px;
+  padding: 6px 8px 4px; border-bottom: 3px solid var(--primary); font-size: inherit; line-height: 1.8;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.seg-part small { font-size: .65rem; font-weight: 800; color: var(--primary); margin-left: 4px; vertical-align: super; }
+.seg-part.bad { background: var(--ko-soft); border-color: var(--ko); }
+.seg-part.bad small { color: var(--ko); }
+.seg-part.miss { background: var(--surface-2); border-color: var(--muted); text-decoration: line-through var(--muted); }
+.seg-part.done { opacity: .6; border-color: transparent; }
+.seg-part .fix { color: var(--ok); font-weight: 800; }
+
+/* ---------- Machine à conjuguer ---------- */
+.machine-out .sentence { font-size: 1.2rem; margin-top: 0; }
+.vhl { color: var(--primary); background: var(--primary-soft); border-radius: 6px; padding: 1px 5px; }
+.machine-out .formula { margin: 8px 0 4px; }
+
+/* ---------- Badges ---------- */
+.tile.badge .ic { font-size: 2rem; }
+.tile.badge.locked { opacity: .55; filter: grayscale(1); }
