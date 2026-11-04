@@ -56,7 +56,7 @@
   var KEY = 'toeicgram.v1';
   function defaults() {
     return { xp: 0, stats: {}, errors: [], bestCombo: 0, day: null, dayStreak: 0, p6: { ok: 0, n: 0 }, tests: [], tensesSeen: [], cfg: { themes: [], count: 10, timer: 0 },
-      badges: [], today: { d: null, n: 0 }, survivalBest: 0, blitzBest: 0, p6done: [], detective: false };
+      badges: [], today: { d: null, n: 0 }, survivalBest: 0, blitzBest: 0, p6done: [], detective: false, p7: { ok: 0, n: 0 }, p7done: [] };
   }
   var store = (function () {
     var d = defaults();
@@ -106,6 +106,7 @@
       case 'blitz': return store.blitzBest >= 15;
       case 'detective': return store.detective;
       case 'reader': return store.p6done.length >= window.PART6.length;
+      case 'reader7': return store.p7done.length >= window.PART7.length;
       case 'allround': return Object.keys(THEMES).every(function (k) { return store.stats[k] && store.stats[k].n >= 10; });
       case 'goal': return todayCount() >= GOAL;
     }
@@ -249,7 +250,7 @@
     app.innerHTML =
       '<section class="hero">' +
         '<h1>TOEIC Grammaire</h1>' +
-        '<p>Parts 5 &amp; 6 · Reading</p>' +
+        '<p>Parts 5, 6 &amp; 7 · Reading</p>' +
         '<div class="row">' +
           '<span class="pill">⭐ Niveau ' + l + ' · ' + levelName(l) + '</span>' +
           '<span class="pill">🔥 ' + (store.dayStreak || 0) + ' jour' + (store.dayStreak > 1 ? 's' : '') + '</span>' +
@@ -264,6 +265,7 @@
         tile('train', '▶️', 'Entraînement Part 5', 'Choisis tes thèmes, avec corrections', 'wide primary') +
         tile('test', '⏱️', 'Test chrono', '30 questions · 10 min') +
         tile('part6', '📰', 'Part 6', 'Textes à trous') +
+        tile('part7', '📖', 'Part 7', 'Compréhension écrite') +
         tile('tenses', '⏳', 'Frises des temps', 'Visualise chaque temps') +
         tile('machine', '⚙️', 'Machine à conjuguer', 'Construis tes phrases') +
         tile('games', '🎮', 'Jeux', 'Survie, défi éclair, trouve l\'erreur…') +
@@ -272,7 +274,7 @@
         tile('errors', '❌', 'Mes erreurs', nErr ? nErr + ' question' + (nErr > 1 ? 's' : '') + ' à revoir' : 'Aucune pour l\'instant') +
         tile('stats', '📈', 'Statistiques', 'Ta progression') +
         tile('badges', '🏅', 'Badges', store.badges.length + ' / ' + window.BADGES.length + ' débloqués') +
-        tile('method', '🧭', 'Méthode Part 5', 'Les bons réflexes', 'wide') +
+        tile('method', '🧭', 'Méthode Part 5', 'Les bons réflexes') +
       '</div>';
     bindNav();
   };
@@ -995,6 +997,79 @@
     });
   };
 
+  // ---------------------------------------------------------------- Part 7
+  var p7 = null;
+  function p7DocHtml(set, di, ans) {
+    var html = esc(set.docs[di].text);
+    // Après une réponse, on surligne le passage du texte qui la justifie.
+    set.qs.forEach(function (q, k) {
+      if (ans[k] === null || q.d !== di) return;
+      var ev = esc(q.ev), at = html.indexOf(ev);
+      if (at >= 0) html = html.slice(0, at) + '<mark id="ev' + k + '">' + ev + '</mark>' + html.slice(at + ev.length);
+    });
+    return html.replace(/\[(\d)\]/g, '<span class="p6blank">[$1]</span>');
+  }
+  routes.part7 = function (idx) {
+    var sets = window.PART7;
+    if (idx === undefined || !sets[idx]) {
+      app.innerHTML = topbar('Part 7 · Compréhension', '') +
+        '<details class="card method"><summary><b>🧭 Méthode Part 7</b></summary><ol class="clean">' +
+        window.PART7_METHOD.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ol></details>' +
+        '<div class="list">' + sets.map(function (s, i) {
+          var done = store.p7done.indexOf(s.id) >= 0;
+          return '<button class="item" data-go="part7/' + i + '"><span class="ic">' + s.icon + '</span><span class="grow"><b>' + esc(s.title) + (done ? ' ✓' : '') + '</b><br>' +
+            '<span class="small muted">' + esc(s.kind) + ' · ' + s.qs.length + ' questions · ≈ ' + s.time + ' min</span></span><span class="chev">›</span></button>';
+        }).join('') + '</div>';
+      return bindNav();
+    }
+    var set = sets[idx];
+    if (!p7 || p7.idx !== idx) p7 = { idx: idx, ans: set.qs.map(function () { return null; }) };
+    var y = window.scrollY;
+    var html = topbar(esc(set.title), 'part7') +
+      '<div class="chips" style="margin-bottom:12px"><span class="chip static">' + esc(set.kind) + '</span><span class="chip static">⏱ ≈ ' + set.time + ' min</span><span class="chip static">' + set.qs.length + ' questions</span></div>';
+    set.docs.forEach(function (d, di) {
+      html += '<div class="card p7doc"><span class="doclabel">' + (set.docs.length > 1 ? (di + 1) + ' · ' : '') + esc(d.label) + '</span>' +
+        '<div class="p6text">' + p7DocHtml(set, di, p7.ans) + '</div></div>';
+    });
+    set.qs.forEach(function (q, k) {
+      var a = p7.ans[k], done = a !== null;
+      html += '<div class="p6q"><div class="qmeta"><h3 style="margin:0">Question ' + (k + 1) + '</h3><span class="chip static small">' + esc(q.type) + '</span></div>' +
+        '<p class="p7q">' + esc(q.q) + '</p><div class="choices">' + q.c.map(function (c, i) {
+          var cls = done ? (i === q.a ? 'ok' : (i === a ? 'ko' : 'dim')) : '';
+          return '<button class="choice ' + cls + '" data-q="' + k + '" data-i="' + i + '"' + (done ? ' disabled' : '') + '><span class="let">' + LETTERS[i] + '</span><span>' + esc(c) + '</span></button>';
+        }).join('') + '</div>' +
+        (done ? '<div class="feedback ' + (a === q.a ? 'ok' : 'ko') + '"><p style="margin:0">' + esc(q.e) + '</p>' +
+          '<button class="linkbtn" data-ev="' + k + '">📍 Voir le passage dans le texte</button></div>' : '') + '</div>';
+    });
+    if (p7.ans.every(function (a) { return a !== null; })) {
+      var okN = p7.ans.filter(function (a, k) { return a === set.qs[k].a; }).length;
+      html += '<div class="card center" style="margin-top:16px"><div class="score-big">' + okN + ' / ' + set.qs.length + '</div></div>' +
+        '<div class="btn-row"><button class="btn secondary" data-go="part7">Autres documents</button>' +
+        (+idx + 1 < sets.length ? '<button class="btn" data-go="part7/' + (+idx + 1) + '">Document suivant →</button>' : '<button class="btn" data-go="">Accueil</button>') + '</div>';
+    }
+    app.innerHTML = html;
+    window.scrollTo(0, y);
+    bindNav();
+    on('[data-q]', 'click', function () {
+      var k = +this.getAttribute('data-q'), i = +this.getAttribute('data-i');
+      p7.ans[k] = i;
+      touchDay();
+      countToday();
+      store.p7.n++;
+      if (i === set.qs[k].a) { store.p7.ok++; addXp(10); }
+      if (p7.ans.every(function (a) { return a !== null; }) && store.p7done.indexOf(set.id) < 0) store.p7done.push(set.id);
+      checkBadges();
+      routes.part7(idx);
+    });
+    on('[data-ev]', 'click', function () {
+      var m = document.getElementById('ev' + this.getAttribute('data-ev'));
+      if (m) {
+        m.scrollIntoView({ block: 'center' });
+        m.classList.remove('flashmark'); void m.offsetWidth; m.classList.add('flashmark');
+      }
+    });
+  };
+
   // ---------------------------------------------------------------- fiches & méthode
   routes.lessons = function () {
     app.innerHTML = topbar('Fiches de grammaire', '') + '<div class="list">' + Object.keys(THEMES).map(function (k) {
@@ -1051,7 +1126,7 @@
       '<h2>Réussite par thème</h2><div class="card">' + Object.keys(THEMES).map(function (k) {
         var s = store.stats[k] || { ok: 0, n: 0 };
         return barRow(THEMES[k].icon + ' ' + THEMES[k].name, s.ok, s.n);
-      }).join('') + barRow('📰 Part 6', store.p6.ok, store.p6.n) + '</div>' +
+      }).join('') + barRow('📰 Part 6', store.p6.ok, store.p6.n) + barRow('📖 Part 7', store.p7.ok, store.p7.n) + '</div>' +
       (store.tests.length ? '<h2>Tests chrono</h2><div class="card">' + store.tests.slice(-5).reverse().map(function (t) {
         return '<div class="bar-row"><span class="lbl">' + esc(t.d) + '</span><div class="bar"><div style="width:' + t.score + '%"></div></div><span class="val">' + t.score + '%</span></div>';
       }).join('') + '</div>' : '') +

@@ -42,7 +42,31 @@ window.ERROR_ITEMS = [
   { p: ["Sales", "has increased", "a lot", "this year."], w: 1, fix: "have increased", th: "quantite",
     e: "« Sales » est pluriel → have increased." },
   { p: ["Please", "say me", "when", "you are ready."], w: 1, fix: "tell me", th: "confusions",
-    e: "tell + personne. On ne dit pas « say me »." }
+    e: "tell + personne. On ne dit pas « say me »." },
+  { p: ["She", "don't like", "working", "on weekends."], w: 1, fix: "doesn't like", th: "temps",
+    e: "Présent simple à la 3e personne du singulier : she doesn't." },
+  { p: ["I", "am working", "here", "since 2019."], w: 1, fix: "have been working", th: "temps",
+    e: "« since 2019 » → present perfect (continu), jamais le présent." },
+  { p: ["The meeting", "will start", "when the director", "will arrive."], w: 3, fix: "arrives.", th: "temps",
+    e: "Après when (sens futur), on met le présent : when the director arrives." },
+  { p: ["He gave me", "an useful", "piece of", "advice."], w: 1, fix: "a useful", th: "quantite",
+    e: "« useful » se prononce avec un son « you » (consonne) → a useful." },
+  { p: ["We discussed", "about", "the budget", "yesterday."], w: 1, fix: "(à supprimer)", th: "prepositions",
+    e: "discuss est transitif direct : we discussed the budget (pas de « about »)." },
+  { p: ["Although", "the delay,", "the project", "was a success."], w: 0, fix: "Despite", th: "connecteurs",
+    e: "« the delay » est un nom → despite / in spite of." },
+  { p: ["The employees", "which", "work late", "get a bonus."], w: 1, fix: "who", th: "pronoms",
+    e: "Antécédent = des personnes → who (ou that)." },
+  { p: ["The letters", "were sended", "to all", "our clients."], w: 1, fix: "were sent", th: "passif",
+    e: "send est irrégulier : send → sent → sent." },
+  { p: ["This is", "the more expensive", "hotel", "in the city."], w: 1, fix: "the most expensive", th: "comparatifs",
+    e: "« in the city » → superlatif : the most expensive." },
+  { p: ["You", "should to", "call", "the client."], w: 1, fix: "should", th: "modaux",
+    e: "should + base verbale, sans « to »." },
+  { p: ["I'm looking forward", "to hear", "from", "you."], w: 1, fix: "to hearing", th: "verbes",
+    e: "look forward TO + V-ING." },
+  { p: ["If I", "would have", "more time,", "I would travel."], w: 1, fix: "had", th: "conditions",
+    e: "Type 2 : If + prétérit (If I had), jamais would après if." }
 ];
 
 // Machine à conjuguer : formes de chaque verbe et complément d'exemple.
@@ -99,6 +123,7 @@ window.BADGES = [
   { id: "blitz",    icon: "🚀", name: "Éclair",          desc: "15 bonnes réponses en Défi éclair" },
   { id: "detective", icon: "🔍", name: "Détective",      desc: "Sans faute à « Trouve l'erreur »" },
   { id: "reader",   icon: "📰", name: "Lecteur",         desc: "Terminer les 8 textes de la Part 6" },
+  { id: "reader7",  icon: "📚", name: "Lecteur expert",  desc: "Terminer tous les documents de la Part 7" },
   { id: "allround", icon: "🌍", name: "Polyvalent",      desc: "Répondre à 10 questions dans chaque thème" },
   { id: "goal",     icon: "🎯", name: "Objectif atteint", desc: "Atteindre l'objectif du jour" }
 ];
