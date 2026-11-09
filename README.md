@@ -36,6 +36,22 @@ directement depuis le téléphone.
 
 Compilation locale (Android SDK requis) : `./gradlew assembleDebug`.
 
+## Mises à jour automatiques
+
+Au démarrage, l'appli lit `version.json` dans la dernière Release GitHub du dépôt et, si une version plus
+récente existe, propose de l'installer (téléchargement et installation depuis l'appli). Le bouton
+« Rechercher une mise à jour » de l'écran Statistiques fait la même vérification.
+
+Pour publier une mise à jour :
+
+1. Augmenter `versionCode` et `versionName` dans `app/build.gradle`.
+2. Écrire les nouveautés dans `release-notes.txt` (elles s'affichent dans la fenêtre de mise à jour).
+3. Pousser sur `main` : le workflow compile l'APK et crée la Release `v<versionName>` avec l'APK et `version.json`.
+
+Le dépôt doit être **public** pour que l'appli puisse lire les Releases sans identifiant. Toutes les versions sont
+signées avec `app/toeic-grammaire.keystore` (clé volontairement versionnée, choix assumé pour ce projet personnel) :
+c'est ce qui permet d'installer une version par-dessus la précédente.
+
 ## Structure
 
 - `app/src/main/assets/www/` : l'application (HTML/CSS/JS, sans dépendance externe).

@@ -1131,8 +1131,13 @@
         return '<div class="bar-row"><span class="lbl">' + esc(t.d) + '</span><div class="bar"><div style="width:' + t.score + '%"></div></div><span class="val">' + t.score + '%</span></div>';
       }).join('') + '</div>' : '') +
       '<button class="btn secondary" data-go="badges">🏅 Voir mes badges (' + store.badges.length + ' / ' + window.BADGES.length + ')</button>' +
+      (window.Android ? '<button class="btn secondary" id="update">🔄 Rechercher une mise à jour</button>' +
+        '<p class="muted small center">Version ' + esc(window.Android.version()) + '</p>' : '') +
       '<button class="btn ghost" id="reset">Réinitialiser ma progression</button>';
     bindNav();
+    // Le bouton n'existe que dans l'appli Android, qui expose window.Android (voir MainActivity).
+    var up = document.getElementById('update');
+    if (up) up.addEventListener('click', function () { window.Android.checkUpdate(); });
     document.getElementById('reset').addEventListener('click', function () {
       if (!confirm('Effacer toute ta progression ?')) return;
       var d = defaults();

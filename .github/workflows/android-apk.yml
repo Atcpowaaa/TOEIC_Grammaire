@@ -2,10 +2,7 @@ name: Build APK TOEIC Grammaire
 
 on:
   push:
-    paths:
-      - '**'
-    tags:
-      - 'v*'
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -22,20 +19,36 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Build debug APK
+      - name: Build APK
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
           cp app/build/outputs/apk/debug/app-debug.apk TOEIC-Grammaire.apk
+
+      # version.json est lu par l'appli au démarrage pour proposer la mise à jour.
+      - name: Write version.json
+        id: version
+        run: |
+          CODE=$(sed -n "s/^ *versionCode \([0-9]*\)$/\1/p" app/build.gradle)
+          NAME=$(sed -n "s/^ *versionName '\(.*\)'$/\1/p" app/build.gradle)
+          jq -n --argjson code "$CODE" --arg name "$NAME" --rawfile notes release-notes.txt \
+            '{versionCode: $code, versionName: $name, notes: ($notes | rtrimstr("\n")), apk: "TOEIC-Grammaire.apk"}' > version.json
+          cat version.json
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
           name: TOEIC-Grammaire-apk
           path: TOEIC-Grammaire.apk
 
-      # Un tag v* (ex. v1.0) publie aussi l'APK dans une Release GitHub, téléchargeable depuis le téléphone.
+      # Chaque version (versionName dans app/build.gradle) a sa Release ; la plus récente est celle que l'appli lit.
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: TOEIC-Grammaire.apk
+          tag_name: v${{ steps.version.outputs.name }}
+          name: TOEIC Grammaire ${{ steps.version.outputs.name }}
+          body_path: release-notes.txt
+          make_latest: true
+          files: |
+            TOEIC-Grammaire.apk
+            version.json

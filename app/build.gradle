@@ -10,13 +10,28 @@ android {
         applicationId 'fr.esiee.toeicgrammaire'
         minSdk 26
         targetSdk 34
-        versionCode 3
-        versionName '1.2'
+        versionCode 4
+        versionName '1.3'
+    }
+
+    // Toutes les versions doivent être signées avec la même clé, sinon Android refuse
+    // d'installer une mise à jour par-dessus l'appli existante.
+    signingConfigs {
+        shared {
+            storeFile file('toeic-grammaire.keystore')
+            storePassword 'toeicgrammaire'
+            keyAlias 'toeic'
+            keyPassword 'toeicgrammaire'
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.shared
+        }
         release {
             minifyEnabled false
+            signingConfig signingConfigs.shared
         }
     }
 

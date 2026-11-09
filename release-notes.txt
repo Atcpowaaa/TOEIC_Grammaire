@@ -1,0 +1,1 @@
+Nouveau : l'appli te propose toute seule les nouvelles versions au démarrage. Tu peux aussi vérifier à tout moment depuis l'écran Statistiques.
