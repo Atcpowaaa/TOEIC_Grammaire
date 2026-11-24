@@ -1,1 +1,1 @@
-Nouveau : l'appli te propose toute seule les nouvelles versions au démarrage. Tu peux aussi vérifier à tout moment depuis l'écran Statistiques.
+Version 1.4 : première mise à jour installée directement depuis l'appli. Petites améliorations d'affichage.
