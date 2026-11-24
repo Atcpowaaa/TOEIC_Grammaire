@@ -52,6 +52,16 @@ Le dépôt doit être **public** pour que l'appli puisse lire les Releases sans 
 signées avec `app/toeic-grammaire.keystore` (clé volontairement versionnée, choix assumé pour ce projet personnel) :
 c'est ce qui permet d'installer une version par-dessus la précédente.
 
+## Version iPhone (web app)
+
+L'appli est aussi publiée comme site web installable, par le workflow `.github/workflows/web.yml`
+(GitHub Pages) : https://atcpowaaa.github.io/TOEIC_Grammaire/
+
+Sur iPhone : ouvrir ce lien dans **Safari**, bouton Partager, « Sur l'écran d'accueil ». L'appli s'ouvre alors en
+plein écran, fonctionne hors ligne (service worker `sw.js`) et se met à jour toute seule dès qu'elle a du réseau.
+
+Pré-requis côté GitHub : dépôt public, puis Settings > Pages > Source = « GitHub Actions ».
+
 ## Structure
 
 - `app/src/main/assets/www/` : l'application (HTML/CSS/JS, sans dépendance externe).

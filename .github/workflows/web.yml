@@ -1,0 +1,35 @@
+name: Publier la version web (iPhone)
+
+# Publie l'appli (app/src/main/assets/www) sur GitHub Pages : c'est la version à installer sur iPhone
+# depuis Safari. Pré-requis : dépôt public et Settings > Pages > Source = « GitHub Actions ».
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/src/main/assets/www/**'
+      - '.github/workflows/web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/src/main/assets/www
+      - id: deployment
+        uses: actions/deploy-pages@v4

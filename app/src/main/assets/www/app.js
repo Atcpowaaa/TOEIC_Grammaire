@@ -260,6 +260,7 @@
         '<div class="goal"><span>🎯 Objectif du jour</span><b>' + Math.min(todayCount(), GOAL) + ' / ' + GOAL + '</b></div>' +
         '<div class="xpbar goalbar"><div style="width:' + Math.min(100, todayCount() * 100 / GOAL) + '%"></div></div>' +
       '</section>' +
+      installTip() +
       '<div class="tip"><b>💡 Astuce :</b> ' + esc(tip) + '</div>' +
       '<div class="grid">' +
         tile('train', '▶️', 'Entraînement Part 5', 'Choisis tes thèmes, avec corrections', 'wide primary') +
@@ -278,6 +279,13 @@
       '</div>';
     bindNav();
   };
+  // Sur iPhone, dans Safari : explique comment installer l'appli sur l'écran d'accueil.
+  function installTip() {
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!ios || navigator.standalone || location.protocol !== 'https:') return '';
+    return '<div class="tip"><b>📲 Installer l\'appli :</b> touche le bouton Partager <b>⬆︎</b> en bas de Safari, ' +
+      'puis « Sur l\'écran d\'accueil ». Elle marchera même sans réseau.</div>';
+  }
   function tile(route, ic, title, sub, cls) {
     return '<button class="tile ' + (cls || '') + '" data-go="' + route + '"><span class="ic">' + ic + '</span><div><b>' + title + '</b><br><span>' + esc(sub) + '</span></div></button>';
   }

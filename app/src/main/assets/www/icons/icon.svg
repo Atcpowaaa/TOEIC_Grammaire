@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <!-- Même dessin que l'icône Android : une frise chronologique sur fond violet. -->
+  <rect width="108" height="108" fill="#4B4FD6"/>
+  <g transform="translate(54 54) scale(1.4) translate(-56 -57)">
+  <path d="M28,60 L76,60" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M74,53 L84,60 L74,67 Z" fill="#FFFFFF"/>
+  <circle cx="42" cy="60" r="6" fill="#FFD27A"/>
+  <path d="M58,46 L58,74" stroke="#FF8A8A" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M42,52 C42,40 58,40 58,50" stroke="#FFD27A" stroke-width="3" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>
