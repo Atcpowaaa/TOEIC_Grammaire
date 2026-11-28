@@ -283,8 +283,9 @@
   function installTip() {
     var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     if (!ios || navigator.standalone || location.protocol !== 'https:') return '';
-    return '<div class="tip"><b>📲 Installer l\'appli :</b> touche le bouton Partager <b>⬆︎</b> en bas de Safari, ' +
-      'puis « Sur l\'écran d\'accueil ». Elle marchera même sans réseau.</div>';
+    return '<div class="tip"><b>📲 Installer l\'appli :</b> dans Safari, touche <b>•••</b> à côté de l\'adresse puis <b>Partager</b> ' +
+      '(sur les anciens iPhone : le bouton Partager <b>⬆︎</b> en bas), puis « <b>Sur l\'écran d\'accueil</b> » et « Ajouter ». ' +
+      'Elle marchera même sans réseau.</div>';
   }
   function tile(route, ic, title, sub, cls) {
     return '<button class="tile ' + (cls || '') + '" data-go="' + route + '"><span class="ic">' + ic + '</span><div><b>' + title + '</b><br><span>' + esc(sub) + '</span></div></button>';

@@ -57,7 +57,8 @@ c'est ce qui permet d'installer une version par-dessus la précédente.
 L'appli est aussi publiée comme site web installable, par le workflow `.github/workflows/web.yml`
 (GitHub Pages) : https://atcpowaaa.github.io/TOEIC_Grammaire/
 
-Sur iPhone : ouvrir ce lien dans **Safari**, bouton Partager, « Sur l'écran d'accueil ». L'appli s'ouvre alors en
+Sur iPhone : ouvrir ce lien dans **Safari**, toucher « ••• » à côté de l'adresse puis Partager (iOS 26 ; avant : le bouton
+Partager en bas), puis « Sur l'écran d'accueil » et « Ajouter » (laisser « Ouvrir comme app web » activé). L'appli s'ouvre alors en
 plein écran, fonctionne hors ligne (service worker `sw.js`) et se met à jour toute seule dès qu'elle a du réseau.
 
 Pré-requis côté GitHub : dépôt public, puis Settings > Pages > Source = « GitHub Actions ».
